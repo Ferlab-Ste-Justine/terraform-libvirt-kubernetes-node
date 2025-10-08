@@ -128,9 +128,12 @@ variable "fluentbit" {
     kubelet_tag = string
     etcd_tag = string
     node_exporter_tag = string
-    metrics = object({
+    metrics = optional(object({
       enabled = bool
       port    = number
+    }), {
+      enabled = false
+      port = 0
     })
     forward = object({
       domain = string
@@ -138,18 +141,6 @@ variable "fluentbit" {
       hostname = string
       shared_key = string
       ca_cert = string
-    })
-    etcd = object({
-      enabled = bool
-      key_prefix = string
-      endpoints = list(string)
-      ca_certificate = string
-      client = object({
-        certificate = string
-        key = string
-        username = string
-        password = string
-      })
     })
   })
   default = {
@@ -169,18 +160,6 @@ variable "fluentbit" {
       hostname = ""
       shared_key = ""
       ca_cert = ""
-    }
-    etcd = {
-      enabled = false
-      key_prefix = ""
-      endpoints = []
-      ca_certificate = ""
-      client = {
-        certificate = ""
-        key = ""
-        username = ""
-        password = ""
-      }
     }
   }
 }
@@ -220,4 +199,14 @@ variable "install_dependencies" {
   description = "Whether to install all dependencies in cloud-init"
   type = bool
   default = true
+}
+
+variable "enable_k8s_audit" {
+  type    = bool
+  default = false
+}
+
+variable "enable_apiserver_audit_tail" {
+  type    = bool
+  default = false
 }

@@ -14,16 +14,18 @@ chpasswd:
       password: "${admin_user_password}"
       type: text
 %{ endif ~}
+
 preserve_hostname: false
 hostname: ${hostname}
+
 users:
   - default
   - name: ${ssh_admin_user}
     ssh_authorized_keys:
       - "${ssh_admin_public_key}"
 
-%{ if docker_registry_auth.enabled ~}
 write_files:
+%{ if docker_registry_auth.enabled ~}
   - path: /root/.docker/config.json
     owner: root:root
     permissions: "0600"
@@ -37,6 +39,24 @@ write_files:
       }
 %{ endif ~}
 
+%{ if enable_k8s_audit ~}
+write_files:
+  - path: /etc/kubernetes/audit-policy/apiserver-audit-policy.yaml
+    owner: root:root
+    permissions: "0644"
+    content: |
+      apiVersion: audit.k8s.io/v1
+      kind: Policy
+      rules:
+        - level: Metadata
+        - level: RequestResponse
+          verbs: ["create","update","patch","delete","deletecollection"]
+
+  - path: /var/log/kubernetes/audit/kube-apiserver-audit.log
+    owner: root:root
+    permissions: "0644"
+    content: ""
+%{ endif ~}
+
 runcmd:
-  #Kubernetes Adjustment
   - /sbin/sysctl -w net.ipv4.conf.all.forwarding=1

@@ -78,7 +78,7 @@ module "chrony_configs" {
 }
 
 module "fluentbit_configs" {
-  source = "git::https://github.com/Ferlab-Ste-Justine/terraform-cloudinit-templates.git//fluent-bit?ref=v0.8.0"
+  source = "git::https://github.com/Ferlab-Ste-Justine/terraform-cloudinit-templates.git//fluent-bit?ref=v0.39.1"
   install_dependencies = var.install_dependencies
   fluentbit = {
     metrics = var.fluentbit.metrics
@@ -106,9 +106,15 @@ module "fluentbit_configs" {
         }
       ]
     )
+    log_files = var.enable_apiserver_audit_tail ? [
+      {
+        tag            = "kubernetes-apiserver-audit"
+        path           = "/var/log/kubernetes/audit/kube-apiserver-audit.log"
+        read_from_head = true
+      }
+    ] : []
     forward = var.fluentbit.forward
   }
-  etcd    = var.fluentbit.etcd
 }
 
 locals {
@@ -124,6 +130,7 @@ locals {
             ssh_admin_user = var.ssh_admin_user
             admin_user_password = var.admin_user_password
             docker_registry_auth = var.docker_registry_auth
+            enable_k8s_audit         = var.enable_k8s_audit
           }
         )
       },
