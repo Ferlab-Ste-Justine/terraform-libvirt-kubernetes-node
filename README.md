@@ -90,6 +90,10 @@ The module takes the following variables as input:
   - **pools**: A list of ntp server pools to sync from with each entry containing two properties, **url** and **options** (see: https://chrony.tuxfamily.org/doc/4.2/chrony.conf.html#pool)
   - **makestep**: An object containing remedial instructions if the clock of the vm is significantly out of sync at startup. It is an object containing two properties, **threshold** and **limit** (see: https://chrony.tuxfamily.org/doc/4.2/chrony.conf.html#makestep)
 - **install_dependencies**: Whether cloud-init should install external dependencies (should be set to false if you already provide an image with the external dependencies built-in).
-- **audit**: Minimal configuration to enable Kubernetes API server audit logging.  
-  - **enabled**: Enables or disables creation of the audit policy file and API server audit log on the node. Defaults to `false`.  
-  - **policy_file_path** *(optional)*: Path to the audit policy file used by the API server. Defaults to `/etc/kubernetes/audit-policy/apiserver-audit-policy.yaml`.  
+- **audit**: Kubernetes API server audit logging config.
+  - **enabled** *(bool)*: Enables creation of the audit policy file and the audit log file on the node. Defaults to `false`.
+  - **policy_file_path** *(optional string)*: Path to the audit policy file. Defaults to `/etc/kubernetes/audit-policy/apiserver-audit-policy.yaml`.
+  - **rules** *(optional list)*: Inline audit policy rules to render into the policy file. Each rule is an object:
+    - **level** *(string)*: One of `None|Metadata|Request|RequestResponse`.
+    - **verbs** *(optional list[string])*: Subset of Kubernetes API verbs (e.g., `get`, `list`, `watch`, `create`, `update`, `patch`, `delete`, `deletecollection`).
+    
