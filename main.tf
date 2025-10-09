@@ -168,7 +168,7 @@ module "fluentbit_configs" {
         }
       ]
     )
-    log_files = var.enable_apiserver_audit_tail ? [
+    log_files = var.audit.enabled ? [
       {
         tag            = "kubernetes-apiserver-audit"
         path           = "/var/log/kubernetes/audit/kube-apiserver-audit.log"
