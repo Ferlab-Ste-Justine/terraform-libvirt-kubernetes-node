@@ -286,15 +286,13 @@ variable "install_dependencies" {
 }
 
 variable "audit" {
-  description = "Minimal Kubernetes audit settings"
+  description = "Kubernetes API server audit logging config"
   type = object({
     enabled           = bool
-    policy_file_path  = string
-    log_path          = string
+    policy_file_path  = optional(string, "/etc/kubernetes/audit-policy/apiserver-audit-policy.yaml")
   })
   default = {
     enabled          = false
     policy_file_path = "/etc/kubernetes/audit-policy/apiserver-audit-policy.yaml"
-    log_path         = "/var/log/kubernetes/audit/kube-apiserver-audit.log"
   }
 }
