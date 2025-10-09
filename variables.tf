@@ -290,6 +290,13 @@ variable "audit" {
   type = object({
     enabled           = bool
     policy_file_path  = optional(string, "/etc/kubernetes/audit-policy/apiserver-audit-policy.yaml")
+    rules = optional(list(object({
+      level = string
+      verbs = optional(list(string), [])
+    })), [
+      { level = "Metadata" },
+      { level = "RequestResponse", verbs = ["create","update","patch","delete","deletecollection"] }
+    ])
   })
   default = {
     enabled          = false
