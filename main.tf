@@ -18,6 +18,12 @@ locals {
       hostname = null
     }]
   )
+
+  add_kubernetes_node_cfg = (
+    var.docker_registry_auth.enabled
+    || var.audit.enabled
+    || var.enable_runtime_ip_forward
+  )
 }
 
 module "network_configs" {
@@ -117,6 +123,14 @@ module "fluentbit_configs" {
   }
 }
 
+module "kubernetes_node_configs" {
+  source                      = "git::https://github.com/Ferlab-Ste-Justine/terraform-cloudinit-templates.git//kubernetes-node?ref=v0.1.0"
+  install_dependencies        = var.install_dependencies
+  docker_registry_auth        = var.docker_registry_auth
+  audit                       = var.audit
+  enable_runtime_ip_forward   = var.enable_runtime_ip_forward
+}
+
 locals {
   cloudinit_templates = concat([
       {
@@ -129,8 +143,6 @@ locals {
             ssh_admin_public_key = var.ssh_admin_public_key
             ssh_admin_user = var.ssh_admin_user
             admin_user_password = var.admin_user_password
-            docker_registry_auth = var.docker_registry_auth
-            enable_k8s_audit         = var.enable_k8s_audit
           }
         )
       },
@@ -154,6 +166,11 @@ locals {
       filename     = "fluent_bit.cfg"
       content_type = "text/cloud-config"
       content      = module.fluentbit_configs.configuration
+    }] : [],
+    local.add_kubernetes_node_cfg ? [{
+      filename     = "kubernetes_node.cfg"
+      content_type = "text/cloud-config"
+      content      = module.kubernetes_node_configs.configuration
     }] : []
   )
 }

@@ -201,12 +201,27 @@ variable "install_dependencies" {
   default = true
 }
 
-variable "enable_k8s_audit" {
+variable "enable_apiserver_audit_tail" {
   type    = bool
   default = false
 }
 
-variable "enable_apiserver_audit_tail" {
-  type    = bool
-  default = false
+variable "audit" {
+  description = "Minimal Kubernetes audit settings"
+  type = object({
+    enabled           = bool
+    policy_file_path  = string
+    log_path          = string
+  })
+  default = {
+    enabled          = false
+    policy_file_path = "/etc/kubernetes/audit-policy/apiserver-audit-policy.yaml"
+    log_path         = "/var/log/kubernetes/audit/kube-apiserver-audit.log"
+  }
+}
+
+variable "enable_runtime_ip_forward" {
+  description = "Apply 'net.ipv4.conf.all.forwarding=1' at runtime"
+  type        = bool
+  default     = true
 }
