@@ -288,8 +288,8 @@ variable "install_dependencies" {
 variable "audit" {
   description = "Kubernetes API server audit logging config"
   type = object({
-    enabled           = bool
-    policy_file_path  = optional(string, "/etc/kubernetes/audit-policy/apiserver-audit-policy.yaml")
+    enabled          = optional(bool, false)
+    policy_file_path = optional(string, "/etc/kubernetes/audit-policy/apiserver-audit-policy.yaml")
     rules = optional(list(object({
       level = string
       verbs = optional(list(string), [])
