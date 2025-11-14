@@ -20,6 +20,22 @@ variable "volume_id" {
   type        = string
 }
 
+variable "data_volume" {
+  description = "Parameter for a separate data disk volume to attach to the vm"
+  type         = object({
+    id         = optional(string, "")
+    mount_path = optional(string, "/mnt/data")
+    filesystem = optional(string, "ext4")
+    overwrite  = optional(bool, false)
+  })
+  default      = {
+    id         = ""
+    path       = ""
+    filesystem = ""
+    overwrite  = false
+  }
+}
+
 variable "libvirt_networks" {
   description = "Parameters of libvirt network connections if a libvirt networks are used."
   type = list(object({

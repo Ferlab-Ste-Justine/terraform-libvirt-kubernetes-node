@@ -18,12 +18,13 @@ locals {
       hostname = null
     }]
   )
+  volumes = var.data_volume.id != "" ? [var.volume_id, var.data_volume.id] : [var.volume_id]
   fluentbit_updater_etcd = var.fluentbit.enabled && var.fluentbit_dynamic_config.enabled && var.fluentbit_dynamic_config.source == "etcd"
   fluentbit_updater_git = var.fluentbit.enabled && var.fluentbit_dynamic_config.enabled && var.fluentbit_dynamic_config.source == "git"
 }
 
 module "network_configs" {
-  source = "git::https://github.com/Ferlab-Ste-Justine/terraform-cloudinit-templates.git//network?ref=v0.46.4"
+  source = "git::https://github.com/Ferlab-Ste-Justine/terraform-cloudinit-templates.git//network?ref=v0.47.0"
   network_interfaces = concat(
     [for idx, libvirt_network in var.libvirt_networks: {
       ip = libvirt_network.ip
@@ -45,7 +46,7 @@ module "network_configs" {
 }
 
 module "nfs_client_configs" {
-  source = "git::https://github.com/Ferlab-Ste-Justine/terraform-cloudinit-templates.git//nfs-client?ref=v0.46.4"
+  source = "git::https://github.com/Ferlab-Ste-Justine/terraform-cloudinit-templates.git//nfs-client?ref=v0.47.0"
   install_dependencies = var.install_dependencies
   proxy      = {
     client_name     = var.name
@@ -65,12 +66,12 @@ module "nfs_client_configs" {
 }
 
 module "prometheus_node_exporter_configs" {
-  source = "git::https://github.com/Ferlab-Ste-Justine/terraform-cloudinit-templates.git//prometheus-node-exporter?ref=v0.46.4"
+  source = "git::https://github.com/Ferlab-Ste-Justine/terraform-cloudinit-templates.git//prometheus-node-exporter?ref=v0.47.0"
   install_dependencies = var.install_dependencies
 }
 
 module "chrony_configs" {
-  source = "git::https://github.com/Ferlab-Ste-Justine/terraform-cloudinit-templates.git//chrony?ref=v0.46.4"
+  source = "git::https://github.com/Ferlab-Ste-Justine/terraform-cloudinit-templates.git//chrony?ref=v0.47.0"
   install_dependencies = var.install_dependencies
   chrony = {
     servers  = var.chrony.servers
@@ -80,7 +81,7 @@ module "chrony_configs" {
 }
 
 module "fluentbit_updater_etcd_configs" {
-  source = "git::https://github.com/Ferlab-Ste-Justine/terraform-cloudinit-templates.git//configurations-auto-updater?ref=v0.46.4"
+  source = "git::https://github.com/Ferlab-Ste-Justine/terraform-cloudinit-templates.git//configurations-auto-updater?ref=v0.47.0"
   install_dependencies = var.install_dependencies
   filesystem = {
     path = "/etc/fluent-bit-customization/dynamic-config"
@@ -120,7 +121,7 @@ module "fluentbit_updater_etcd_configs" {
 }
 
 module "fluentbit_updater_git_configs" {
-  source = "git::https://github.com/Ferlab-Ste-Justine/terraform-cloudinit-templates.git//gitsync?ref=v0.46.4"
+  source = "git::https://github.com/Ferlab-Ste-Justine/terraform-cloudinit-templates.git//gitsync?ref=v0.47.0"
   install_dependencies = var.install_dependencies
   filesystem = {
     path = "/etc/fluent-bit-customization/dynamic-config"
@@ -140,7 +141,7 @@ module "fluentbit_updater_git_configs" {
 }
 
 module "fluentbit_configs" {
-  source = "git::https://github.com/Ferlab-Ste-Justine/terraform-cloudinit-templates.git//fluent-bit?ref=v0.46.4"
+  source = "git::https://github.com/Ferlab-Ste-Justine/terraform-cloudinit-templates.git//fluent-bit?ref=v0.47.0"
   install_dependencies = var.install_dependencies
   fluentbit = {
     metrics = var.fluentbit.metrics
@@ -179,8 +180,20 @@ module "fluentbit_configs" {
   }
 }
 
+module "data_volume_configs" {
+  source = "git::https://github.com/Ferlab-Ste-Justine/terraform-cloudinit-templates.git//data-volumes?ref=v0.47.0"
+  volumes = [{
+    label         = "kubernetes_data"
+    device        = "vdb"
+    filesystem    = var.data_volume.filesystem
+    mount_path    = var.data_volume.mount_path
+    mount_options = "defaults"
+    overwrite     = var.data_volume.overwrite
+  }]
+}
+
 module "kubernetes_node_configs" {
-  source                      = "git::https://github.com/Ferlab-Ste-Justine/terraform-cloudinit-templates.git//kubernetes-node?ref=v0.46.4"
+  source                      = "git::https://github.com/Ferlab-Ste-Justine/terraform-cloudinit-templates.git//kubernetes-node?ref=v0.47.0"
   install_dependencies        = var.install_dependencies
   docker_registry_auth        = var.docker_registry_auth
   audit                       = var.audit
@@ -200,6 +213,11 @@ locals {
             admin_user_password = var.admin_user_password
           }
         )
+      },
+      {
+        filename     = "kubernetes_node.cfg"
+        content_type = "text/cloud-config"
+        content      = module.kubernetes_node_configs.configuration
       },
       {
         filename     = "node_exporter.cfg"
@@ -232,11 +250,11 @@ locals {
       content_type = "text/cloud-config"
       content      = module.fluentbit_configs.configuration
     }] : [],
-    [{
-      filename     = "kubernetes_node.cfg"
+    var.data_volume.id != "" ? [{
+      filename     = "data_volume.cfg"
       content_type = "text/cloud-config"
-      content      = module.kubernetes_node_configs.configuration
-    }]
+      content      = module.data_volume_configs.configuration
+    }]: []
   )
 }
 
@@ -270,8 +288,11 @@ resource "libvirt_domain" "k8_node" {
   vcpu = var.vcpus
   memory = var.memory
 
-  disk {
-    volume_id = var.volume_id
+  dynamic "disk" {
+    for_each = local.volumes
+    content {
+      volume_id = disk.value
+    }
   }
 
   dynamic "network_interface" {
