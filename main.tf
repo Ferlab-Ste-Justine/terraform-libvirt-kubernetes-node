@@ -183,7 +183,7 @@ module "fluentbit_configs" {
 module "data_volume_configs" {
   source = "git::https://github.com/Ferlab-Ste-Justine/terraform-cloudinit-templates.git//data-volumes?ref=v0.47.0"
   volumes = [{
-    label         = "kubernetes_data"
+    label         = "k8_data"
     device        = "vdb"
     filesystem    = var.data_volume.filesystem
     mount_path    = var.data_volume.mount_path
