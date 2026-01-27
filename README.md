@@ -14,6 +14,11 @@ The module takes the following variables as input:
 - **vcpus**: Number of vcpus to assign to the load balancer. Defaults to 2.
 - **memory**: Amount of memory to assign to the bastion in MiB. Defaults to 8192 (8 GiB).
 - **volume_id**: Id of the disk volume to attach to the vm
+- **data_volume**: Data volume to support separate local disks for data workflow and potentially data persistence across cluster reprovisioning. It takes the following arguments:
+  - **id**: Id for the data disk volume to attach to the vm's data path
+  - **mount_path**: Mount path where to mount the data disk on the vm (defaults to **/mnt/data**).
+  - **filesystem**: Filesystem type to set for the disk's filesystem (defaults to **ext4**)
+  - **overwrite**: Whether to overwrite the volume content if there is already a filesystem on it (defaults to **false**) 
 - **libvirt_network**: Parameters to connect to libvirt networks. Each entry has the following keys:
   - **network_id**: Id (ie, uuid) of the libvirt network to connect to (in which case **network_name** should be an empty string).
   - **network_name**: Name of the libvirt network to connect to (in which case **network_id** should be an empty string).
